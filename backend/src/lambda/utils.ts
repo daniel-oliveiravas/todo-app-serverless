@@ -28,3 +28,16 @@ export function createDynamoDBClient() {
 
   return new AWS.DynamoDB.DocumentClient()
 }
+
+export function getS3Client() {
+  if (process.env.IS_OFFLINE) {
+    console.log('Creating a local S3 instance')
+    return new AWS.S3({
+      s3ForcePathStyle: true,
+      region: 'localhost',
+      endpoint: 'http://localhost:8000'
+    })
+  }
+
+  return new AWS.S3()
+}
