@@ -15,7 +15,10 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 
   const newItem = {
     ...newTodo,
-    todoId
+    todoId,
+    createdAt: new Date().toISOString(),
+    done: false,
+    attachmentUrl: ''
   }
 
   await docClient.put({
