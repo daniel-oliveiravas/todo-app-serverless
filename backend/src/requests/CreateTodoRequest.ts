@@ -4,9 +4,5 @@
 export interface CreateTodoRequest {
   name: string
   dueDate: string
-  todoId: string
-  createdAt: string
-  done: boolean
-  attachmentUrl: string
-  userId: string
+
 }
