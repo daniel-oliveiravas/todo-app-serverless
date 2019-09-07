@@ -17,9 +17,10 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     ...newTodo,
     todoId,
     createdAt: new Date().toISOString(),
-    done: false,
-    attachmentUrl: ''
+    done: false
   }
+
+  console.log(newItem);
 
   await docClient.put({
     TableName: TODOS_TABLE,
@@ -31,9 +32,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     headers: {
       'Access-Control-Allow-Origin': '*'
     },
-    body: JSON.stringify({
-      newTodo
-    })
+    body: JSON.stringify(newItem)
   }
 }
 
