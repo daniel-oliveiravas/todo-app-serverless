@@ -7,7 +7,12 @@ const TODOS_TABLE = process.env.TODOS_TABLE;
 
 const docClient = createDynamoDBClient();
 
+import { createLogger } from '../../utils/logger';
+
+const logger = createLogger('getTodos');
+
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  logger.info('Processing event:', event);
   const result = await docClient.scan({
     TableName: TODOS_TABLE
   }).promise();

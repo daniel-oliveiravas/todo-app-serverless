@@ -16,8 +16,10 @@ provider:
 
   environment:
     TODOS_TABLE: TODOS-${self:provider.stage}
-    ATTACHMENT_S3_BUCKET: TODOS-ATTACHMENTS-${self:provider.stage}
+    ATTACHMENT_S3_BUCKET: todos-attachments-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
+    AUTH_0_SECRET_ID: Auth0Secret-${self:provider.stage}
+    AUTH_0_SECRET_FIELD: auth0Secret
 
 custom:
   serverless-offline:
@@ -44,8 +46,17 @@ custom:
 
 functions:
 
-  # Auth:
-  #   handler: src/lambda/auth/auth0Authorizer.handler
+  Auth:
+    handler: src/lambda/auth/auth0Authorizer.handler
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - secretsmanager:GetSecretValue
+        Resource: !Ref Auth0Secret
+      - Effect: Allow
+        Action:
+          - kms:Decrypt
+        Resource: !GetAtt KMSKey.Arn
 
   GetTodos:
     handler: src/lambda/http/getTodos.handler
@@ -53,6 +64,7 @@ functions:
       - http:
           method: get
           path: todos
+          authorizer: Auth
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -66,6 +78,7 @@ functions:
           method: post
           path: todos
           reqValidatorName: RequestBodyValidator
+          authorizer: Auth
           documentation:
             summary: Create a new todo
             description: Create a new todo
@@ -83,6 +96,7 @@ functions:
       - http:
           method: patch
           path: todos/{todoId}
+          authorizer: Auth
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -95,6 +109,7 @@ functions:
       - http:
           method: delete
           path: todos/{todoId}
+          authorizer: Auth
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -107,6 +122,7 @@ functions:
       - http:
           method: post
           path: todos/{todoId}/attachment
+          authorizer: Auth
     iamRoleStatements:
     - Effect: Allow
       Action:
@@ -116,6 +132,17 @@ functions:
 
 resources:
   Resources:
+    GatewayResponseDefault4XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+          gatewayresponse.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+
     TodosDynamoDBTable:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -139,13 +166,8 @@ resources:
 
     AttachmentsBucket:
       Type: AWS::S3::Bucket
-      DependsOn: SNSTopicPolicy
       Properties:
         BucketName: ${self:provider.environment.ATTACHMENT_S3_BUCKET}
-        NotificationConfiguration:
-          TopicConfigurations:
-            - Event: s3:ObjectCreated:Put
-              Topic: !Ref ImagesTopic
         CorsConfiguration:
           CorsRules:
             -
@@ -160,3 +182,37 @@ resources:
                 - DELETE
                 - HEAD
               MaxAge: 3000
+    
+    KMSKey:
+      Type: AWS::KMS::Key
+      Properties:
+        Description: KMS key to encrypt Auth0 secret
+        KeyPolicy:
+          Version: '2012-10-17'
+          Id: key-default-1
+          Statement:
+            - Sid: Allow administration of the key
+              Effect: Allow
+              Principal:
+                AWS:
+                  Fn::Join:
+                  - ':'
+                  - - 'arn:aws:iam:'
+                    - Ref: AWS::AccountId
+                    - 'root'
+              Action:
+                - 'kms:*'
+              Resource: '*'
+
+    KMSKeyAlias:
+      Type: AWS::KMS::Alias
+      Properties:
+        AliasName: alias/auth0Key-${self:provider.stage}
+        TargetKeyId: !Ref KMSKey
+
+    Auth0Secret:
+      Type: AWS::SecretsManager::Secret
+      Properties:
+        Name: ${self:provider.environment.AUTH_0_SECRET_ID}
+        Description: Auth0 secret
+        KmsKeyId: !Ref KMSKey
