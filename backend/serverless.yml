@@ -7,6 +7,7 @@ plugins:
   - serverless-dynamodb-local
   - serverless-offline
   - serverless-s3-local
+  - serverless-reqvalidator-plugin
 provider:
   name: aws
   runtime: nodejs8.10
