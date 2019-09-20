@@ -16,7 +16,7 @@ export const handler = middy(async (event: APIGatewayProxyEvent): Promise<APIGat
   const todoId = uuid.v4();
   const userId = getUserId(event);
 
-  const newItem = {
+  const item = {
     ...newTodo,
     todoId,
     userId,
@@ -26,12 +26,12 @@ export const handler = middy(async (event: APIGatewayProxyEvent): Promise<APIGat
 
   await docClient.put({
     TableName: TODOS_TABLE,
-    Item: newItem
+    Item: item
   }).promise();
 
   return {
     statusCode: 201,
-    body: JSON.stringify(newItem)
+    body: JSON.stringify({ item })
   }
 });
 

@@ -24,8 +24,8 @@ provider:
     TODO_USER_ID_INDEX: TodoUserIdIndex
 
 custom:
-  serverless-offline:
-  port: 3003
+  # serverless-offline:
+  #   port: 3003
 
   dynamodb:
     stages:
@@ -73,6 +73,10 @@ functions:
         Action:
           - dynamodb:Query
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.TODO_USER_ID_INDEX}
 
   CreateTodo:
     handler: src/lambda/http/createTodo.handler

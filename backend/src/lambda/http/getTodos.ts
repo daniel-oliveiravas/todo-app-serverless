@@ -1,7 +1,9 @@
 import 'source-map-support/register'
 
-import { APIGatewayProxyEvent, APIGatewayProxyResult, APIGatewayProxyHandler } from 'aws-lambda'
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 import { createDynamoDBClient, getUserId } from '../utils';
+import * as middy from 'middy';
+import { cors } from 'middy/middlewares';
 
 const TODOS_TABLE = process.env.TODOS_TABLE;
 const TODOS_USER_ID_INDEX = process.env.TODO_USER_ID_INDEX;
@@ -12,7 +14,7 @@ import { createLogger } from '../../utils/logger';
 
 const logger = createLogger('getTodos');
 
-export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handler = middy(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   logger.info('Processing event:', event);
 
   const userId = getUserId(event);
@@ -30,9 +32,12 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 
   return {
     statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*'
-    },
-    body: JSON.stringify(items)
+    body: JSON.stringify({ items })
   }
-}
+});
+
+handler.use(
+  cors({
+    credentials: true
+  })
+);
