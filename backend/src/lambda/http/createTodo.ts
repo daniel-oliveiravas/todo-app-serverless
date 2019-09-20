@@ -6,7 +6,7 @@ import { cors } from 'middy/middlewares';
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
 import { CreateTodoRequest } from '../../requests/CreateTodoRequest';
-import { createDynamoDBClient } from '../utils';
+import { createDynamoDBClient, getUserId } from '../utils';
 const docClient = createDynamoDBClient();
 
 const TODOS_TABLE = process.env.TODOS_TABLE;
@@ -14,10 +14,12 @@ const TODOS_TABLE = process.env.TODOS_TABLE;
 export const handler = middy(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   const newTodo: CreateTodoRequest = JSON.parse(event.body);
   const todoId = uuid.v4();
+  const userId = getUserId(event);
 
   const newItem = {
     ...newTodo,
     todoId,
+    userId,
     createdAt: new Date().toISOString(),
     done: false
   }
