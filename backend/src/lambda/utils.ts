@@ -36,8 +36,10 @@ export function getS3Client() {
       s3ForcePathStyle: true,
       region: 'localhost',
       endpoint: 'http://localhost:8000'
-    })
+    });
   }
 
-  return new AWS.S3()
+  return new AWS.S3({
+    signatureVersion: 'v4'
+  });
 }

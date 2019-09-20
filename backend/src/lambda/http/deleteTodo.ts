@@ -1,28 +1,14 @@
 import 'source-map-support/register'
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
-import { createDynamoDBClient } from '../utils'
 import * as middy from 'middy';
 import { cors } from 'middy/middlewares';
-
-const docClient = createDynamoDBClient();
-
-const TODOS_TABLE = process.env.TODOS_TABLE;
+import { deleteTodo } from '../../businessLogic/todos';
 
 export const handler = middy(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  const todoId = event.pathParameters.todoId
 
-  await docClient.delete({
-    TableName: TODOS_TABLE,
-    Key: {
-      'todoId': todoId
-    },
-    ConditionExpression: 'todoId = :todoId',
-    ExpressionAttributeValues: {
-      ':todoId': todoId
-    }
-  }).promise();
-
+  const todoId = event.pathParameters.todoId;
+  await deleteTodo(todoId);
 
   return {
     statusCode: 200,
